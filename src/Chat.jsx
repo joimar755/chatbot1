@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 
+const URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000/"; 
+
+
 const Chat = ({ usuario_id }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -20,7 +23,7 @@ const Chat = ({ usuario_id }) => {
 
     try {
       // Llamada al backend
-      const res = await axios.post("http://localhost:8000/chatbot", {
+      const res = await axios.post(`${URL}/chatbot`, {
         content: input,
       });
 
