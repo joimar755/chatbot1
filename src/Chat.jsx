@@ -1,29 +1,42 @@
-// Chat.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 
-const Chat = () => {
+const Chat = ({ usuario_id }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
+  const messagesEndRef = useRef(null);
+
+  // Función para hacer scroll al final automáticamente
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   const sendMessage = async () => {
     if (!input.trim()) return;
 
-    // Agregar mensaje del usuario
-    const userMessage = { sender: "user", text: input };
-    setMessages([...messages, userMessage]);
-
     try {
-      const res = await axios.post("http://localhost:8000/chat", {
-        user_message: input,
+      // Llamada al backend
+      const res = await axios.post("http://localhost:8000/chatbot", {
+        content: input,
       });
 
-      const botMessage = { sender: "bot", text: res.data.response };
-      setMessages((prev) => [...prev, botMessage]);
+      // Actualizar mensajes con todo el historial de la conversación
+      const historial = res.data.mensajes.map((m) => ({
+        sender: m.tipo_rol === 1 ? "user" : "bot",
+        text: m.content,
+      }));
+
+      setMessages(historial);
     } catch (err) {
       console.error("Error al enviar mensaje:", err);
-      const errorMessage = { sender: "bot", text: "Error de conexión" };
-      setMessages((prev) => [...prev, errorMessage]);
+      setMessages((prev) => [
+        ...prev,
+        { sender: "bot", text: "Error de conexión" },
+      ]);
     }
 
     setInput("");
@@ -52,21 +65,23 @@ const Chat = () => {
               margin: "5px 0",
             }}
           >
-            <span
-              style={{
-                display: "inline-block",
-                padding: "8px 12px",
-                borderRadius: "12px",
-                backgroundColor:
-                  msg.sender === "user" ? "#0b93f6" : "#e5e5ea",
-                color: msg.sender === "user" ? "white" : "black",
-              }}
-            >
-              {msg.text}
-            </span>
+     <span
+  style={{
+    display: "inline-block",
+    padding: "8px 12px",
+    borderRadius: "12px",
+    backgroundColor: msg.sender === "user" ? "#0b93f6" : "#e5e5ea",
+    color: msg.sender === "user" ? "white" : "black",
+    whiteSpace: "pre-wrap", // ⚡ respeta saltos de línea
+  }}
+>
+  {msg.text}
+</span>
           </div>
         ))}
+        <div ref={messagesEndRef} />
       </div>
+
       <input
         type="text"
         value={input}
